@@ -4,8 +4,12 @@ from json import loads, JSONDecodeError, dumps
 from pydantic import BaseModel
 from typing import Optional
 
-from mistralai import Mistral, BaseModelCard, ModelCapabilities
+from mistralai import Mistral, BaseModelCard, ModelCapabilities, ChatCompletionRequest
+from src.Models.Mistralai import utilities as Mixtral_Model_Utilities
+
 from os import environ as env
+from dotenv import load_dotenv
+load_dotenv()
 
 router = APIRouter(prefix= "/models", tags= ["Models"])
 # @router.options()
@@ -25,8 +29,8 @@ model = Mistral(
 models_list = dict([(i.id, i) for i in model.models.list().data])
 
 # Définir le modèle Pydantic pour le corps de la requête
-class PromptRequest(BaseModel):
-    prompt: Optional[str]
+class PromptRequest(ChatCompletionRequest):
+    model: None
 
 
 ## Fonctions internes
@@ -110,10 +114,10 @@ async def retrieve_Model(model_id: str) -> BaseModelCard:
 @router.post("/{model_id}",
              summary="Chat with Model without using a Session",
              description= "Chat with the model of your choice !")
-async def chat_withModel(model_id: str, prompt: PromptRequest) -> str:
+async def chat_withModel(model_id: str, request: ChatCompletionRequest) -> str:
     """Chat with a Model"""
     
-    if prompt is None:
+    if request is None:
         raise HTTPException(status_code = 400,
                             detail      = "Prompt must be provided!",
                             headers     = {"model_id": dumps(model_id), "code_error": "400"})
@@ -125,7 +129,7 @@ async def chat_withModel(model_id: str, prompt: PromptRequest) -> str:
                                 headers = {"model_id": dumps(model_id), "code_error": "404"})
     
     # *Utiliser le Modèle pour envoyer la requête avec le prompt*
-    return "Hello" # Response
+    return await Mixtral_Model_Utilities.send_prompt(model_id= model_id, history= await Mixtral_Model_Utilities.add_system_prompt(prompt= prompt)) # Response
 
 
 

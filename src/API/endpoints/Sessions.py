@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from json import dumps
 
+from mistralai import ChatCompletionRequest
 from src.API.endpoints.Models import chat_withModel
 
 router = APIRouter(prefix= "/sessions", tags= ["Sessions"])
@@ -34,10 +35,10 @@ async def create_session() -> Session_id_Schema:
 async def delete_session(session_id: Session_id_Schema) -> newSession:
     return sessions_list.pop(session_id)
 
-async def get_sessions() -> dict[Session_id_Schema, newSession]:
-    return sessions_list
+async def get_sessions() -> dict[Session_id_Schema, newSession] | None:
+    return sessions_list if sessions_list else None
 
-async def get_session_by_id(session_id: Session_id_Schema) -> newSession:
+async def get_session_by_id(session_id: Session_id_Schema) -> newSession | None:
     return sessions_list[session_id] if session_id in sessions_list else None
 
 
@@ -84,23 +85,42 @@ async def create_Session() -> newSession:
 
 
 #/// Models
-@router.post("/{session_id}/models/{model_id}",
+# @router.post("/{session_id}/models/{model_id}",
+#              summary= "Chat with Model using a Session",
+#              description= "<b>Chat with the model of your choice!</b></br> The session saves your History and gives models a memory of your last exchanges.")
+# async def chat_withModel_Session(session_id: int, model_id: str, prompt: str | None = None) -> str:
+#     actual_session = await get_session_by_id(session_id)
+#     if actual_session is None:
+#         raise HTTPException(status_code = 404,
+#                             detail      = "The Session does not exists or has been permanently deleted",
+#                             headers     = {"session_id": dumps(session_id), "model_id": dumps(model_id), "code_error": "404", "method": "POST"})
+    
+#     if prompt is None:
+#         raise HTTPException(status_code = 400,
+#                             detail      = "Prompt must be provided!",
+#                             headers     = {"session_id": dumps(session_id), "model_id": dumps(model_id), "code_error": "400","method": "POST"})
+
+#     # TODO ajouter le chat dans la session en cours
+#     return await chat_withModel(model_id= model_id, prompt= prompt)
+
+
+@router.post("/{session_id}/models/completions",
              summary= "Chat with Model using a Session",
              description= "<b>Chat with the model of your choice!</b></br> The session saves your History and gives models a memory of your last exchanges.")
-async def chat_withModel_Session(session_id: int, model_id: str, prompt: str | None = None) -> str:
+async def chat_withModel_Session(session_id: int, request: ChatCompletionRequest) -> str:
     actual_session = await get_session_by_id(session_id)
     if actual_session is None:
         raise HTTPException(status_code = 404,
                             detail      = "The Session does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "model_id": dumps(model_id), "code_error": "404", "method": "POST"})
     
-    if prompt is None:
-        raise HTTPException(status_code = 400,
-                            detail      = "Prompt must be provided!",
-                            headers     = {"session_id": dumps(session_id), "model_id": dumps(model_id), "code_error": "400","method": "POST"})
+    # if request is None:
+    #     raise HTTPException(status_code = 400,
+    #                         detail      = "Prompt must be provided!",
+    #                         headers     = {"session_id": dumps(session_id), "model_id": dumps(model_id), "code_error": "400","method": "POST"})
 
     # TODO ajouter le chat dans la session en cours
-    return await chat_withModel(model_id= model_id, prompt= prompt)
+    return await chat_withModel(model_id= request.model, prompt= request.messages)
 
 
 #/// Agents
