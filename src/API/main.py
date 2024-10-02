@@ -6,6 +6,15 @@ from fastapi.templating import Jinja2Templates
 from src.API.endpoints.Sessions import router as rt_Sessions
 from src.API.endpoints.Models import router as rt_Models
 
+# Examples:
+# @router.options()
+# @router.get()
+# @router.head()
+# @router.post()
+# @router.put()
+# @router.delete()
+# @router.trace()
+
 
 def create_app():
     # Clien
@@ -83,9 +92,11 @@ async def about(request: Request):
 async def admin(request: Request):
     access = False
     if not access:
-        raise HTTPException(status_code=418, detail="Huh ho?! You're not supposed to be there...")
+        raise HTTPException(status_code=418,
+                            detail="Huh ho?! You're not supposed to be there...",
+                            headers= {"is_secret": "true", "code_error": "403", "method": "GET"})
     
-    # Redirection vers une page web : https://rickrollwebsite.univer.se/secret
+    # Redirection vers une page web marrante :)
     return RedirectResponse(url= "https://rickrollwebsite.univer.se/secret")
 
 

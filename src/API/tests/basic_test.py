@@ -1,4 +1,5 @@
 import requests
+from json import dumps
 from os import environ as env
 
 base_url = "http://127.0.0.1:8000/api/v1"
@@ -22,10 +23,25 @@ models = requests.get(url= base_url + "/models/").json()
 print("Models :", models)
 print()
 
-model_id = "codestral-mamba-2407"
-print("Model chosen :", requests.get(url= base_url + "/models/ ").json())
+models_capabilities = {
+    "capabilities": dumps({
+        "vision": True
+    })
+}
+matchs = requests.get(url= base_url + "/models/", params= models_capabilities)
+print("Models Matchs :", matchs.json())
 print()
 
-print(requests.post(url= base_url + "/models/" + model_id, json= {
-    "prompt": "This is a test prompt"
+model_id = "codestral-mamba-2407"
+print("Model chosen :", requests.get(url= base_url + "/models/" + model_id).json())
+print()
+
+print(requests.post(url= base_url + "/models/completions", json= {
+    "model": model_id,
+    "messages": [
+        {
+            "role": "user",
+            "content": "This is a test prompt"
+        }
+    ]
 }).json())
