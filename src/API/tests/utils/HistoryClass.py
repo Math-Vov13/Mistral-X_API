@@ -4,6 +4,9 @@ class History:
     def __init__(self, history: list[dict[str, str]] = []) -> None:
         self.__history = history
     
+    def force_append(self, message):
+        self.__history.append(message)
+    
     def append(self, message: str, role: Literal["user", "assistant"] = "user"):
         if not message:
             message = "<ce champ est vide>"

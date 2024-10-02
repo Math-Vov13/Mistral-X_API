@@ -1,4 +1,4 @@
-from mistralai import Mistral, SystemMessage, ChatCompletionResponse, ChatCompletionRequest
+from mistralai import Mistral, SystemMessage, ChatCompletionResponse, ChatCompletionRequest, ToolCall, ToolMessage
 from mistralai import HTTPValidationError, SDKError
 from os import environ as env
 
@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class Response_Schema(BaseModel):
     succeed: bool
     message_id: int
-    response: ChatCompletionResponse | dict[str, str]
+    response: ChatCompletionResponse | ToolCall | ToolMessage | dict[str, str]
 
 model = Mistral(
         api_key= env["MISTRAL_API_KEY"],
@@ -65,6 +65,7 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest):
             "succeed": False,
             "message_id": -1,
             "response": {
+                "type": "HTTPValidation",
                 "msg_error": str(http_err) if str(http_err) != "{}" else "HTTP Error: Your request Body caused an unexpected error ?! Please pay attention to the schema requested."
             }
         }
@@ -75,6 +76,7 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest):
             "succeed": False,
             "message_id": -1,
             "response": {
+                "type": "SDK",
                 "msg_error": str(sdk_err) if str(sdk_err) != "{}" else "SDK Error: The API cannot support streaming at the moment."
             }
         }
@@ -85,6 +87,7 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest):
             "succeed": False,
             "message_id": -1,
             "response": {
+                "type": "Global",
                 "msg_error": str(e)
             }
         }
