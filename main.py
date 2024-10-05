@@ -1,2 +1,7 @@
 from src.API.main import app
-# from src.API.test_router import app
+
+## Uncomment this line if 'uvicorn is not installed on your laptop'
+# import uvicorn
+# uvicorn.run(
+#     app= app
+# )

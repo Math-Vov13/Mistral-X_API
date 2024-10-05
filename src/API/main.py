@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -17,16 +17,16 @@ from src.API.endpoints.Models import router as rt_Models
 
 
 def create_app():
-    # Clien
+    # Client
     app = FastAPI(
         ## Informations
         title= "Mon API Test avec Mistral AI",
         description= "Hello, World! This is a cool API :D",
         version= "1.0.0",
         contact= {
-            "name": "IBlue",
+            "name": "...",
             # "url": "nothing here",
-            # "emal": "nothing here"
+            # "email": "nothing here"
         },
         license_info= {
             "name": "MIT",
@@ -92,9 +92,9 @@ async def about(request: Request):
 async def admin(request: Request):
     access = False
     if not access:
-        raise HTTPException(status_code=418,
-                            detail="Huh ho?! You're not supposed to be there...",
-                            headers= {"is_secret": "true", "code_error": "403", "method": "GET"})
+        raise HTTPException(status_code = status.HTTP_418_IM_A_TEAPOT,
+                            detail      = "Huh ho?! You're not supposed to be there...",
+                            headers     = {"is_secret": "true", "code_error": "403", "method": "GET"})
     
     # Redirection vers une page web marrante :)
     return RedirectResponse(url= "https://rickrollwebsite.univer.se/secret")

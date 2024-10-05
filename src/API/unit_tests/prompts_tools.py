@@ -1,5 +1,4 @@
 import requests
-import functools
 from json import dumps, loads
 
 from mistralai import ToolCall, ToolMessage, FunctionCall

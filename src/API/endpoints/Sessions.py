@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from datetime import datetime
 from random import randint
 from json import dumps
 
-from mistralai import ChatCompletionRequest, ChatCompletionResponse, AgentsCompletionRequest
+from mistralai import ChatCompletionRequest, AgentsCompletionRequest
 from src.API.endpoints.Models import chat_withModel
 from src.Models.Mistralai.utilities import Response_Schema
 
@@ -61,7 +62,7 @@ async def get_message_by_id(message_id: int) -> None:
 async def list_all_sessions() -> dict[Session_id_Schema, newSession]:
     sessions = await get_sessions()
     if sessions is None:
-        raise HTTPException(status_code = 404,
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "You need to create a session_id first.",
                             headers     = {"code_error": "404", "method": "GET"})
     
@@ -74,7 +75,7 @@ async def list_all_sessions() -> dict[Session_id_Schema, newSession]:
 async def retrieve_Session(session_id: int) -> newSession:
     my_session = await get_session_by_id(session_id)
     if my_session is None:
-        raise HTTPException(status_code = 404,
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "code_error": "404", "method": "GET"})
     
@@ -102,20 +103,16 @@ async def create_Session() -> newSession:
 async def chat_withModel_Session(session_id: int, request: ChatCompletionRequest) -> Response_Schema:
     actual_session = await get_session_by_id(session_id)
     if actual_session is None:
-        raise HTTPException(status_code = 404,
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "model_id": dumps(request.model if "model" in request else None), "code_error": "404", "method": "POST"})
-    
-    # if request is None:
-    #     raise HTTPException(status_code = 400,
-    #                         detail      = "Prompt must be provided!",
-    #                         headers     = {"session_id": dumps(session_id), "model_id": dumps(model_id), "code_error": "400","method": "POST"})
 
     response = await chat_withModel(request= request)
-    response["message_id"] = await generate_message_id()
+    if not isinstance(response, StreamingResponse):
+        response["message_id"] = await generate_message_id()
 
     # TODO ajouter le chat dans la session en cours
-
+    # TODO l'id du message n'est pas envoyé quand la réponse est en Streaming ==> créer un cookie
     return response
 
 
@@ -126,17 +123,12 @@ async def chat_withModel_Session(session_id: int, request: ChatCompletionRequest
 async def chat_withAgent_Session(session_id: int, request: AgentsCompletionRequest) -> str:
     actual_session = await get_session_by_id(session_id)
     if actual_session is None:
-        raise HTTPException(status_code = 404,
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "agent_id": dumps(request.agent_id), "code_error": "404", "method": "POST"})
-    
-    # if request is None:
-    #     raise HTTPException(status_code = 400,
-    #                         detail      = "Prompt must be provided!",
-    #                         headers     = {"session_id": dumps(session_id), "agent_id": dumps(request.agent_id), "code_error": "400","method": "POST"})
 
     # TODO ajouter le chat dans la session en cours
-    raise HTTPException(status_code = 501,
+    raise HTTPException(status_code = status.HTTP_501_NOT_IMPLEMENTED,
                         detail      = "This feature has not been implemented yet.",
                         headers     = {"session_id": dumps(session_id), "agent_id": dumps(request.agent_id), "code_error": "501","method": "POST"})
     return await chat_withModel(model_id= agent_id, prompt= prompt)
@@ -149,7 +141,7 @@ async def chat_withAgent_Session(session_id: int, request: AgentsCompletionReque
                description= "<b>Delete a Session permanently!</b></br> After this action, you will no longer be able to retrive your session history.")
 async def delete_Session(session_id: int):
     if not await get_session_by_id(session_id):
-        raise HTTPException(status_code = 404,
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "code_error": "404", "method": "DELETE"})
     
@@ -165,16 +157,16 @@ async def delete_Session(session_id: int):
                description="<b>Delete a Message from a Session permanently!</b></br> After this action, you will no longer be able to retrive this message in your session history.")
 async def delete_message(session_id: int, message_id: int):
     if not await get_session_by_id(session_id):
-        raise HTTPException(status_code = 404,
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "code_error": "404", "method": "DELETE"})
     
-    raise HTTPException(status_code = 501,
+    raise HTTPException(status_code = status.HTTP_501_NOT_IMPLEMENTED,
                         detail      = "This feature has not been implemented yet.",
                         headers     = {"session_id": dumps(session_id), "message_id": dumps(message_id), "code_error": "501", "method": "DELETE"})
     
     if not await get_message_by_id(session_id):
-        raise HTTPException(status_code = 404,
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Message does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "message_id": dumps(message_id), "code_error": "404", "method": "DELETE"})
     

@@ -1,13 +1,26 @@
-from mistralai import Mistral, SystemMessage, ChatCompletionResponse, ChatCompletionRequest, ToolCall, ToolMessage
+from mistralai import Mistral, SystemMessage, ChatCompletionResponse, ChatCompletionRequest, ToolCall, ToolMessage, CompletionResponseStreamChoice, CompletionEvent, CompletionChunk
 from mistralai import HTTPValidationError, SDKError
-from os import environ as env
+from typing import AsyncGenerator
 
 from pydantic import BaseModel
+from os import environ as env
+from json import loads
+
+class Reponse_Error_Schema(BaseModel):
+    type: str
+    msg_error: str
 
 class Response_Schema(BaseModel):
-    succeed: bool
+    succeed: bool = True
+    streaming: bool = False
     message_id: int
-    response: ChatCompletionResponse | ToolCall | ToolMessage | dict[str, str]
+    response: ChatCompletionResponse | ToolCall | ToolMessage | Reponse_Error_Schema
+
+class Streaming_Response_Schema(BaseModel):
+    message_id: int
+    index: int
+    chunk: CompletionChunk
+
 
 model = Mistral(
         api_key= env["MISTRAL_API_KEY"],
@@ -33,36 +46,75 @@ async def add_system_prompt(prompt: list[dict[str, str]]) -> list :
     ] + prompt
 
 
+async def stream_response(async_gen: AsyncGenerator[CompletionEvent, None]):
+    counter = -1
+    async for chunk in async_gen:
+        counter += 1
+        yield Streaming_Response_Schema(
+            message_id= -1,
+            index= counter,
+            chunk= chunk.data
+        ).model_dump_json()
+
+
 async def send_prompt(history: dict, parameters: ChatCompletionRequest):
     try:
-        response_formatted = await model.chat.complete_async(
-            model= parameters.model,
-            messages= history,
+        if parameters.stream:
+            streaming_formatted = await model.chat.stream_async(
+                model= parameters.model,
+                messages= history,
 
-            temperature= parameters.temperature,
-            top_p= parameters.top_p,
-            max_tokens= parameters.max_tokens,
-            min_tokens= parameters.min_tokens,
+                temperature= parameters.temperature,
+                top_p= parameters.top_p,
+                max_tokens= parameters.max_tokens,
+                min_tokens= parameters.min_tokens,
 
-            stream= False, # pour le moment, l'API ne supporte pas le Streaming...
-            stop= parameters.stop,
-            random_seed= parameters.random_seed,
-            response_format= parameters.response_format,
+                stream= True,
+                stop= parameters.stop,
+                random_seed= parameters.random_seed,
+                response_format= parameters.response_format,
 
-            tools= parameters.tools,
-            tool_choice= parameters.tool_choice,
+                tools= parameters.tools,
+                tool_choice= parameters.tool_choice,
 
-            safe_prompt= parameters.safe_prompt,
-            
-            # Server side
-            retries=3,
-        )
-        response_dict = response_formatted.model_dump()
+                safe_prompt= parameters.safe_prompt,
+                
+                # Server side
+                retries=3,
+            )
+
+            response_dict = streaming_formatted
+
+        else:
+            response_formatted : ChatCompletionResponse = await model.chat.complete_async(
+                model= parameters.model,
+                messages= history,
+
+                temperature= parameters.temperature,
+                top_p= parameters.top_p,
+                max_tokens= parameters.max_tokens,
+                min_tokens= parameters.min_tokens,
+
+                stream= False,
+                stop= parameters.stop,
+                random_seed= parameters.random_seed,
+                response_format= parameters.response_format,
+
+                tools= parameters.tools,
+                tool_choice= parameters.tool_choice,
+
+                safe_prompt= parameters.safe_prompt,
+                
+                # Server side
+                retries=3,
+            )
+            response_dict = response_formatted.model_dump()
 
     except HTTPValidationError as http_err:
         print("LOGS :: <" + str(http_err) + ">", f"({http_err.__class__})")
         return {
             "succeed": False,
+            "streaming": False,
             "message_id": -1,
             "response": {
                 "type": "HTTPValidation",
@@ -74,6 +126,7 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest):
         print("LOGS :: <" + str(sdk_err) + ">", f"({sdk_err.__class__})")
         return {
             "succeed": False,
+            "streaming": False,
             "message_id": -1,
             "response": {
                 "type": "SDK",
@@ -85,6 +138,7 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest):
         print("LOGS :: <" + str(e) + ">", f"({e.__class__})")
         return {
             "succeed": False,
+            "streaming": False,
             "message_id": -1,
             "response": {
                 "type": "Global",
@@ -95,6 +149,7 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest):
     else:
         return {
             "succeed": True,
+            "streaming": parameters.stream,
             "message_id": -1,
             "response": response_dict
         }
