@@ -9,7 +9,7 @@ with httpx.stream(method='POST',
                     "model": model_id,
                     "messages": [{
                         "role": "user",
-                        "content": "Cite moi tous les présidents des US"
+                        "content": "Liste tous les présidents des US jusqu'à aujourd'hui."
                     }],
                     "stream": True
                   }) as r:

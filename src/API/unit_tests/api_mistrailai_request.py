@@ -1,28 +1,6 @@
-from mistralai import Mistral, CompletionEvent, CompletionChunk
 from os import environ as env
-import asyncio
 from json import loads
 
-model = Mistral(
-        api_key= env["MISTRAL_API_KEY"],
-        server_url="https://api.mistral.ai"
-    )
-
-async def main():
-    streaming = await model.chat.stream_async(
-        model= "open-mistral-7b",
-        messages= [
-            {
-                "role": "user",
-                "content": "Bonjour !"
-            }
-        ],
-
-        stream= True
-    )
-
-    async for chunk in streaming:
-        print(chunk.model_dump()["data"]["choices"][0]["delta"]["content"], flush= True, end= "")
 
 if __name__ == "__main__":
     import requests
@@ -57,5 +35,3 @@ if __name__ == "__main__":
             print(chunk_dict["choices"][0]["delta"]["content"], flush= True, end= "")
     else:
         print(response.json())
-
-    # asyncio.run(main())

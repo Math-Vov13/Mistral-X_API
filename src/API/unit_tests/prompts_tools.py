@@ -2,7 +2,6 @@ import requests
 from json import dumps, loads
 
 from mistralai import ToolCall, ToolMessage, FunctionCall
-
 from utils.HistoryClass import History
 
 

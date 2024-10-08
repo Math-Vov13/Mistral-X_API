@@ -1,25 +1,10 @@
-from mistralai import Mistral, SystemMessage, ChatCompletionResponse, ChatCompletionRequest, ToolCall, ToolMessage, CompletionResponseStreamChoice, CompletionEvent, CompletionChunk
+from mistralai import Mistral, SystemMessage, ChatCompletionResponse, ChatCompletionRequest, CompletionEvent
 from mistralai import HTTPValidationError, SDKError
 from typing import AsyncGenerator
 
-from pydantic import BaseModel
 from os import environ as env
-from json import loads
+from src.API import schema
 
-class Reponse_Error_Schema(BaseModel):
-    type: str
-    msg_error: str
-
-class Response_Schema(BaseModel):
-    succeed: bool = True
-    streaming: bool = False
-    message_id: int
-    response: ChatCompletionResponse | ToolCall | ToolMessage | Reponse_Error_Schema
-
-class Streaming_Response_Schema(BaseModel):
-    message_id: int
-    index: int
-    chunk: CompletionChunk
 
 
 model = Mistral(
@@ -27,8 +12,7 @@ model = Mistral(
         server_url="https://api.mistral.ai"
     )
 
-models_list = dict([(i.id, i) for i in model.models.list().data])
-
+models_list = dict([(i.id, i) for i in model.models.list().data]) #TODO enlever ?
 
 
 ##-- FUNCTIONS
@@ -46,18 +30,19 @@ async def add_system_prompt(prompt: list[dict[str, str]]) -> list :
     ] + prompt
 
 
-async def stream_response(async_gen: AsyncGenerator[CompletionEvent, None]):
+async def stream_response(async_gen: AsyncGenerator[CompletionEvent, None], message_id: schema.Message_id_Schema = -1):
     counter = -1
     async for chunk in async_gen:
         counter += 1
-        yield Streaming_Response_Schema(
-            message_id= -1,
+        yield schema.Streaming_Response_Schema(
+            message_id= message_id,
             index= counter,
             chunk= chunk.data
         ).model_dump_json()
 
 
-async def send_prompt(history: dict, parameters: ChatCompletionRequest):
+async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_id: schema.Message_id_Schema = -1):
+    print("Message id : ", message_id)
     try:
         if parameters.stream:
             streaming_formatted = await model.chat.stream_async(
@@ -150,6 +135,6 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest):
         return {
             "succeed": True,
             "streaming": parameters.stream,
-            "message_id": -1,
+            "message_id": message_id,
             "response": response_dict
         }
