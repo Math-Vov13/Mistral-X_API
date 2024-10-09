@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, Request
 from fastapi.responses import StreamingResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from datetime import datetime
 from json import loads, JSONDecodeError, dumps
 
@@ -10,6 +12,11 @@ from src.API import schema
 
 
 router = APIRouter(prefix= "/models", tags= ["Models"])
+limiter = Limiter(
+    key_func= get_remote_address,
+    strategy= "fixed-window",
+    storage_uri= "memory://" #sauvegarde dans la mémoire (peut être connecté à une bdd)
+)
 
 
 
@@ -17,7 +24,8 @@ router = APIRouter(prefix= "/models", tags= ["Models"])
 @router.get("/",
             summary="List all Models",
             description="Get a list of all models you have access. *(agents or training jobs won't be listed there !)*")
-async def list_all_models(capabilities: str = Query(None)) -> schema.list_models_schema:
+@limiter.limit("1/2second", per_method= True)
+async def list_all_models(request: Request, capabilities: str = Query(None)) -> schema.list_models_schema:
     models = await database.get_models()
     if capabilities:
         try:
@@ -74,7 +82,8 @@ async def list_all_models(capabilities: str = Query(None)) -> schema.list_models
 @router.get("/{model_id}", response_model= BaseModelCard, #deprecated= True,
             summary="Retrive a Model",
             description= "Retrive a Model based on its `model_id`")
-async def retrieve_Model(model_id: str) -> BaseModelCard:
+@limiter.limit("1/2second", per_method= True)
+async def retrieve_Model(request: Request, model_id: str) -> BaseModelCard:
     model = await database.get_model_by_id(model_id)
     if model is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -89,20 +98,21 @@ async def retrieve_Model(model_id: str) -> BaseModelCard:
 @router.post("/completions",
              summary="Chat with Model without using a Session",
              description= "Chat with the model of your choice !")
-async def chat_withModel(request: ChatCompletionRequest, session_id: schema.Session_id_Schema | None = None) -> schema.Response_Schema | schema.Streaming_Response_Schema:
+@limiter.limit("5/2second", per_method= True)
+async def chat_withModel(request: Request, body: ChatCompletionRequest, session_id: schema.Session_id_Schema | None = None) -> schema.Response_Schema | schema.Streaming_Response_Schema:
     """Chat with a Model"""
 
     print(session_id)
-    if request is None:
+    if body is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
                             detail      = "Body must be provided!",
-                            headers     = {"model_id": dumps(request.model), "code_error": "400", "method": "POST"})
+                            headers     = {"model_id": dumps(body.model), "code_error": "400", "method": "POST"})
 
-    model = await database.get_model_by_id(request.model)
+    model = await database.get_model_by_id(body.model)
     if model is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                                 detail  = "The Model does not exists or has been permanently deleted!",
-                                headers = {"model_id": dumps(request.model), "code_error": "404", "method": "POST"})
+                                headers = {"model_id": dumps(body.model), "code_error": "404", "method": "POST"})
     
     message_id = -1 # -1 défini par défaut
     if session_id is not None:
@@ -115,8 +125,8 @@ async def chat_withModel(request: ChatCompletionRequest, session_id: schema.Sess
 
 
     generated_response = await Mixtral_Model_Utilities.send_prompt(
-        parameters= request,
-        history= request.messages if await Mixtral_Model_Utilities.contain_system_prompt(request.messages) else await Mixtral_Model_Utilities.add_system_prompt(prompt= request.messages),
+        parameters= body,
+        history= body.messages if await Mixtral_Model_Utilities.contain_system_prompt(body.messages) else await Mixtral_Model_Utilities.add_system_prompt(prompt= body.messages),
         message_id= message_id
         ) # Response
     
@@ -131,11 +141,13 @@ async def chat_withModel(request: ChatCompletionRequest, session_id: schema.Sess
     return generated_response
 
 
+
 ### DELETE
 @router.delete("/{model_id}",
                summary="Delete a Model",
                description="<b>Delete a Model from your API_key.</b></br>Don't worry ! You'll just loose access to this Model, it won't be really deleted ;)")
-async def delete_Model(model_id: str):
+@limiter.limit("1/5second", per_method= True)
+async def delete_Model(request: Request, model_id: str):
     if not await database.get_model_by_id(model_id):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Model does not exists or has been permanently deleted!",
