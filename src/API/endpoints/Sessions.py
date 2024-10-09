@@ -24,8 +24,6 @@ limiter = Limiter(
             description= "<b>List of all open sessions.</b>")
 @limiter.limit("1/second", per_method= True)
 async def list_all_sessions(request: Request) -> dict[schema.Session_id_Schema, schema.newSession]:
-    print(request.client.host)
-    print(request.client.port)
     sessions = await database.get_sessions()
     if sessions is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -55,7 +53,7 @@ async def retrieve_Session(request: Request, session_id: schema.Session_id_Schem
 @router.post("/",
              summary= "Create a Session",
              description= "<b>Create automatically a new Session.</b>")
-@limiter.limit("2/5second", per_method= True)
+@limiter.limit("1/3second", per_method= True)
 async def create_Session(request: Request) -> schema.newSession:
     """Create a new Session"""
     

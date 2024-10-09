@@ -9,7 +9,7 @@ REQUESTS
 API
 - ~~define schema~~
 - ~~streaming~~
-- rate limit
+- ~~rate limit~~
 - add AOuth (secured tokens)
 
 SITE WEB

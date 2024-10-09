@@ -102,7 +102,6 @@ async def retrieve_Model(request: Request, model_id: str) -> BaseModelCard:
 async def chat_withModel(request: Request, body: ChatCompletionRequest, session_id: schema.Session_id_Schema | None = None) -> schema.Response_Schema | schema.Streaming_Response_Schema:
     """Chat with a Model"""
 
-    print(session_id)
     if body is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
                             detail      = "Body must be provided!",
@@ -131,7 +130,6 @@ async def chat_withModel(request: Request, body: ChatCompletionRequest, session_
         ) # Response
     
     if generated_response["succeed"] and generated_response["streaming"]: # Handle streaming
-        print(generated_response["response"], flush= True)
         return StreamingResponse(
             content= Mixtral_Model_Utilities.stream_response(generated_response["response"], message_id= message_id),
             media_type= "text/event-stream",
