@@ -3,9 +3,10 @@ from mistralai import HTTPValidationError, SDKError
 from typing import AsyncGenerator
 
 from os import environ as env
+from dotenv import load_dotenv
 from src.API import schema
 
-
+load_dotenv()
 
 model = Mistral(
         api_key= env["MISTRAL_API_KEY"],

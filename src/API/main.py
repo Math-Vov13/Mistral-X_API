@@ -100,6 +100,30 @@ async def admin(request: Request):
     return RedirectResponse(url= "https://rickrollwebsite.univer.se/secret")
 
 
+@app.get("/debug", include_in_schema= False,
+         summary= "",
+         description= "[Hidden EndPoint] Show debug data")
+async def debug(request: Request):
+    return {
+        "server": request.url.netloc,
+        "uri": request.url.path,
+        "secured": request.url.is_secure,
+        "method": request.method,
+
+        "client": {
+            "ip": request.client.host,
+            "port": request.client.port,
+        },
+
+        "request": {
+            "params": request.path_params.items(),
+            "query": request.query_params.items(),
+            "headers": request.headers.items(),
+            "cookies": request.cookies.items(),
+        }
+    }
+
+
 
 # ROUTERS
 app.include_router(router= rt_Sessions)
