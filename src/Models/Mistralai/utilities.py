@@ -4,7 +4,7 @@ from typing import AsyncGenerator
 
 from os import environ as env
 from dotenv import load_dotenv
-from src.API import schema
+from src.API.scheme import *
 
 load_dotenv()
 
@@ -31,18 +31,18 @@ async def add_system_prompt(prompt: list[dict[str, str]]) -> list :
     ] + prompt
 
 
-async def stream_response(async_gen: AsyncGenerator[CompletionEvent, None], message_id: schema.Message_id_Schema = -1):
+async def stream_response(async_gen: AsyncGenerator[CompletionEvent, None], message_id: Message_id_Scheme = -1):
     counter = -1
     async for chunk in async_gen:
         counter += 1
-        yield schema.Streaming_Response_Schema(
+        yield Streaming_Response_Scheme(
             message_id= message_id,
             index= counter,
             chunk= chunk.data
         ).model_dump_json()
 
 
-async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_id: schema.Message_id_Schema = -1):
+async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_id: Message_id_Scheme = -1):
     print("Message id : ", message_id)
     try:
         if parameters.stream:

@@ -7,7 +7,7 @@ from json import dumps
 from mistralai import ChatCompletionRequest, AgentsCompletionRequest
 from src.API.endpoints.Models import chat_withModel
 from src.API import database
-from src.API import schema
+from src.API.scheme import *
 
 router = APIRouter(prefix= "/sessions", tags= ["Sessions"])
 limiter = Limiter(
@@ -23,7 +23,7 @@ limiter = Limiter(
             summary= "List all open sessions",
             description= "<b>List of all open sessions.</b>")
 @limiter.limit("1/second", per_method= True)
-async def list_all_sessions(request: Request) -> dict[schema.Session_id_Schema, schema.newSession]:
+async def list_all_sessions(request: Request) -> dict[Session_id_Scheme, newSession]:
     sessions = await database.get_sessions()
     if sessions is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -33,11 +33,11 @@ async def list_all_sessions(request: Request) -> dict[schema.Session_id_Schema, 
     return sessions
 
 
-@router.get("/{session_id}", response_model= schema.newSession,
+@router.get("/{session_id}", response_model= newSession,
             summary= "Show a Session",
             description= "<b>Show a Session with its unique `session_id`.</b>")
 @limiter.limit("1/second", per_method= True)
-async def retrieve_Session(request: Request, session_id: schema.Session_id_Schema) -> schema.newSession:
+async def retrieve_Session(request: Request, session_id: Session_id_Scheme) -> newSession:
     my_session = await database.get_session_by_id(session_id)
     if my_session is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -54,11 +54,11 @@ async def retrieve_Session(request: Request, session_id: schema.Session_id_Schem
              summary= "Create a Session",
              description= "<b>Create automatically a new Session.</b>")
 @limiter.limit("1/3second", per_method= True)
-async def create_Session(request: Request) -> schema.newSession:
+async def create_Session(request: Request) -> newSession:
     """Create a new Session"""
     
     NEW_session_id = await database.create_session()
-    database.sessions_list[NEW_session_id] = schema.newSession(session_id= NEW_session_id, created=datetime.now().timestamp())
+    database.sessions_list[NEW_session_id] = newSession(session_id= NEW_session_id, created=datetime.now().timestamp())
 
     return await retrieve_Session(request= request, session_id= NEW_session_id)
 
@@ -68,14 +68,14 @@ async def create_Session(request: Request) -> schema.newSession:
              summary= "Chat with Model using a Session",
              description= "<b>Chat with the model of your choice!</b></br> The session saves your History and gives models a memory of your last exchanges.")
 @limiter.limit("5/2second", per_method= True)
-async def chat_withModel_Session(request: Request, session_id: schema.Session_id_Schema, body: ChatCompletionRequest) -> schema.Response_Schema:
+async def chat_withModel_Session(request: Request, session_id: Session_id_Scheme, body: ChatCompletionRequest) -> Response_Scheme:
     actual_session = await database.get_session_by_id(session_id)
     if actual_session is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",
                             headers     = {"session_id": dumps(session_id), "model_id": dumps(body.model if "model" in body else None), "code_error": "404", "method": "POST"})
 
-    response = await chat_withModel(request= body, session_id= session_id)
+    response = await chat_withModel(request= request, body= body, session_id= session_id)
     # if not isinstance(response, StreamingResponse):
     #     response["message_id"] = await generate_message_id()
 
@@ -89,7 +89,7 @@ async def chat_withModel_Session(request: Request, session_id: schema.Session_id
              summary= "Chat with your Agent using a Session",
              description= "<b>Chat with one of your agents!</b></br> The session saves your History and gives agents a memory of your last exchanges.")
 @limiter.limit("5/2second", per_method= True)
-async def chat_withAgent_Session(request: Request, session_id: schema.Session_id_Schema, body: AgentsCompletionRequest) -> None:
+async def chat_withAgent_Session(request: Request, session_id: Session_id_Scheme, body: AgentsCompletionRequest) -> None:
     actual_session = await database.get_session_by_id(session_id)
     if actual_session is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -109,7 +109,7 @@ async def chat_withAgent_Session(request: Request, session_id: schema.Session_id
                summary= "Delete a Session",
                description= "<b>Delete a Session permanently!</b></br> After this action, you will no longer be able to retrive your session history.")
 @limiter.limit("1/5second", per_method= True)
-async def delete_Session(request: Request, session_id: schema.Session_id_Schema):
+async def delete_Session(request: Request, session_id: Session_id_Scheme):
     if not await database.get_session_by_id(session_id):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",
@@ -127,7 +127,7 @@ async def delete_Session(request: Request, session_id: schema.Session_id_Schema)
                summary="Delete a Message",
                description="<b>Delete a Message from a Session permanently!</b></br> After this action, you will no longer be able to retrive this message in your session history.")
 @limiter.limit("1/2second", per_method= True)
-async def delete_message(request: Request, session_id: schema.Session_id_Schema, message_id: schema.Message_id_Schema):
+async def delete_message(request: Request, session_id: Session_id_Scheme, message_id: Message_id_Scheme):
     if not await database.get_session_by_id(session_id):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail      = "The Session does not exists or has been permanently deleted",

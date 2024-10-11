@@ -8,7 +8,7 @@ from json import loads, JSONDecodeError, dumps
 from mistralai import BaseModelCard, ChatCompletionRequest
 from src.Models.Mistralai import utilities as Mixtral_Model_Utilities
 from src.API import database
-from src.API import schema
+from src.API.scheme import *
 
 
 router = APIRouter(prefix= "/models", tags= ["Models"])
@@ -25,12 +25,12 @@ limiter = Limiter(
             summary="List all Models",
             description="Get a list of all models you have access. *(agents or training jobs won't be listed there !)*")
 @limiter.limit("1/2second", per_method= True)
-async def list_all_models(request: Request, capabilities: str = Query(None)) -> schema.list_models_schema:
+async def list_all_models(request: Request, capabilities: str = Query(None)) -> list_models_scheme:
     models = await database.get_models()
     if capabilities:
         try:
             capabilities : dict = loads(capabilities)
-            validated_model = schema.ModelCapabilities_Nullable.model_validate(capabilities)
+            validated_model = ModelCapabilities_Nullable.model_validate(capabilities)
             ## ! ATTENTION ! ##
             ## Le type __ModelCapabilities__ mettra toujours par défaut 'completion_chat' et 'function_calling' en 'True'
             ## Heureusement, tous les modèles de Mistral possèdent ces 2 capacitées par défaut. (pour l'instant...?)
@@ -99,7 +99,7 @@ async def retrieve_Model(request: Request, model_id: str) -> BaseModelCard:
              summary="Chat with Model without using a Session",
              description= "Chat with the model of your choice !")
 @limiter.limit("5/2second", per_method= True)
-async def chat_withModel(request: Request, body: ChatCompletionRequest, session_id: schema.Session_id_Schema | None = None) -> schema.Response_Schema | schema.Streaming_Response_Schema:
+async def chat_withModel(request: Request, body: ChatCompletionRequest, session_id: Session_id_Scheme | None = None) -> Response_Scheme | Streaming_Response_Scheme:
     """Chat with a Model"""
 
     if body is None:

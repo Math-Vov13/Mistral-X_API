@@ -1,10 +1,16 @@
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, status, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Annotated
+
+from datetime import datetime
 
 from src.API.endpoints.Sessions import router as rt_Sessions
 from src.API.endpoints.Models import router as rt_Models
+from src.API.endpoints.Token import router as rt_Auth
 
 # Examples:
 # @router.options()
@@ -47,7 +53,16 @@ def create_app():
     return app
 
 app = create_app()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ["http://127.0.0.1:8000"],
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"]
+)
+
 templates = Jinja2Templates(directory="src/API/templates")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 
 
@@ -75,7 +90,8 @@ templates = Jinja2Templates(directory="src/API/templates")
 @app.get("/", response_class=HTMLResponse, tags= ["Home"],
          summary="Show Home Page",
          description="Home Page.")
-async def home(request: Request):
+async def home(request: Request, token: Annotated[str, Depends(oauth2_scheme)]):
+    print(token)
     return templates.TemplateResponse("index.html", {"request": request, "data": "Bienvenue!"})
 
 
@@ -105,10 +121,16 @@ async def admin(request: Request):
          description= "[Hidden EndPoint] Show debug data")
 async def debug(request: Request):
     return {
-        "server": request.url.netloc,
-        "uri": request.url.path,
-        "secured": request.url.is_secure,
-        "method": request.method,
+        "server": {
+            "host": request.url.netloc,
+            "date": datetime.now().timestamp(),
+        },
+        "url" : {
+            "complete": "http" + ("s" if request.url.is_secure else "") + "://" + request.url.netloc + request.url.path,
+            "uri": request.url.path,
+            "method": request.method,
+            "secured": request.url.is_secure,
+        },
 
         "client": {
             "ip": request.client.host,
@@ -128,6 +150,7 @@ async def debug(request: Request):
 # ROUTERS
 app.include_router(router= rt_Sessions)
 app.include_router(router= rt_Models)
+app.include_router(router= rt_Auth)
 
 
 # @app.get("/index", response_class=HTMLResponse)
