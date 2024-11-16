@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException, Query, status, Request
+from fastapi import APIRouter, HTTPException, Query, status, Request, Cookie
 from fastapi.responses import StreamingResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from datetime import datetime
 from json import loads, JSONDecodeError, dumps
+from typing import Annotated
 
 from mistralai import BaseModelCard, ChatCompletionRequest
 from src.Models.Mistralai import utilities as Mixtral_Model_Utilities
 from src.API import database
-from src.API.scheme import *
+from src.API.schema import *
 
 
 router = APIRouter(prefix= "/models", tags= ["Models"])
@@ -25,7 +26,7 @@ limiter = Limiter(
             summary="List all Models",
             description="Get a list of all models you have access. *(agents or training jobs won't be listed there !)*")
 @limiter.limit("1/2second", per_method= True)
-async def list_all_models(request: Request, capabilities: str = Query(None)) -> list_models_scheme:
+async def list_all_models(request: Request, capabilities: str = Query(None)) -> list_models_schema:
     models = await database.get_models()
     if capabilities:
         try:
@@ -99,8 +100,9 @@ async def retrieve_Model(request: Request, model_id: str) -> BaseModelCard:
              summary="Chat with Model without using a Session",
              description= "Chat with the model of your choice !")
 @limiter.limit("5/2second", per_method= True)
-async def chat_withModel(request: Request, body: ChatCompletionRequest, session_id: Session_id_Scheme | None = None) -> Response_Scheme | Streaming_Response_Scheme:
+async def chat_withModel(request: Request, body: ChatCompletionRequest, message_id: Annotated[int, Cookie()] = -1) -> Response_Schema | Streaming_Response_Schema:
     """Chat with a Model"""
+    print("message id:", message_id)
 
     if body is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
@@ -112,15 +114,6 @@ async def chat_withModel(request: Request, body: ChatCompletionRequest, session_
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                                 detail  = "The Model does not exists or has been permanently deleted!",
                                 headers = {"model_id": dumps(body.model), "code_error": "404", "method": "POST"})
-    
-    message_id = -1 # -1 défini par défaut
-    if session_id is not None:
-        if not await database.get_session_by_id(session_id= session_id):
-            raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
-                                detail  = "The Session does not exists or has been permanently deleted",
-                                headers = {"session_id": dumps(session_id), "code_error": "404", "method": "POST"})
-        else:
-            message_id = await database.generate_message_id(session_id) # Créer un nouveau message ID pour la Session actuelle
 
 
     generated_response = await Mixtral_Model_Utilities.send_prompt(

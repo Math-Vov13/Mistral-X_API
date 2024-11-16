@@ -4,16 +4,16 @@ from mistralai import ChatCompletionResponse, ToolCall, ToolMessage, CompletionC
 
 
 ### Sessions
-Session_id_Scheme = int
+Session_id_Schema = int
 class newSession(BaseModel):
     __tablename__ = "Session"
     
-    session_id: Session_id_Scheme
+    session_id: Session_id_Schema
     created: float
     history: dict | None = None
 
     class Config:
-        json_scheme_extra = {
+        json_schema_extra = {
             "example": {
                 "session_id": 0,
                 "created": 0.0,
@@ -23,11 +23,11 @@ class newSession(BaseModel):
 
 
 ### Messages
-Message_id_Scheme = int
+Message_id_Schema = int
 
 
 ### Models
-class list_models_scheme(BaseModel):
+class list_models_schema(BaseModel):
     Date: float
     Length: int
     Matchs: dict[str, list[BaseModelCard]]
@@ -41,17 +41,17 @@ class ModelCapabilities_Nullable(ModelCapabilities):
 
 
 ### Mixtral
-class Reponse_Error_Scheme(BaseModel):
+class Reponse_Error_Schema(BaseModel):
     type: str
     msg_error: str
 
-class Response_Scheme(BaseModel):
+class Response_Schema(BaseModel):
     succeed: bool = True
     streaming: bool = False
-    message_id: Message_id_Scheme
-    response: ChatCompletionResponse | ToolCall | ToolMessage | Reponse_Error_Scheme
+    message_id: Message_id_Schema
+    response: ChatCompletionResponse | ToolCall | ToolMessage | Reponse_Error_Schema
 
-class Streaming_Response_Scheme(BaseModel):
-    message_id: Message_id_Scheme
+class Streaming_Response_Schema(BaseModel):
+    message_id: Message_id_Schema
     index: int
     chunk: CompletionChunk

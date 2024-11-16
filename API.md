@@ -32,10 +32,11 @@ DataBase:
 Le Headers doit ressembler à ça:</br>
 ```json
 {
-    'Accept': 'application/json',
-    'Authorization': 'Bearer <api_key>'
+    "Accept": "application/json",
+    "Authorization": "Bearer <api_key>"
 }
 ```
+</br>
 
 ### Other
 get
@@ -53,6 +54,7 @@ GET /about
 ```js
 GET /admin
 ```
+</br>
 
 ### Documentation
 get
@@ -70,6 +72,7 @@ GET /api/v1/redoc
 ```js
 GET /api/v1/openapi.json
 ```
+</br>
 
 ### Sessions
 get
@@ -83,10 +86,23 @@ GET /api/v1/sessions
 GET /api/v1/sessions/{session_id}
 ```
 
+> - `Voir` l'historique des conversations d'une session en cours avec son <u>'session_id'</u>
+```js
+GET /api/v1/sessions/{session_id}/history
+```
+
 post
 > - `Créer` une session
 ```js
 POST /api/v1/sessions
+```
+
+> - `Envoyer` un prompt à un modèle avec un <u>'session_id'</u>, <u>'model_id'</u> et <u>prompt</u>
+```js
+POST /api/v1/sessions/{session_id}/models/completions
+{
+    ...
+}
 ```
 
 delete
@@ -97,6 +113,8 @@ DELETE /api/v1/sessions/{session_id}
 
 *NOTE*: créer un id pour chaque message. Pouvoir supprimer un message par son id ?
 
+</br>
+
 ### Models
 get
 > - `Voir` tous les modèles disponibles
@@ -104,16 +122,29 @@ get
 GET /api/v1/models
 ```
 
+> - `Voir` un modèle
+```js
+GET /api/v1/models/{model_id}
+```
+
 post
 > - `Envoyer` une requête à l'agent avec son <u>'agent_id'</u> et <u>prompt</u> (sans sauvegarder l'historique dans une session)
 ```js
-POST /api/v1/models/{model_id}?prompt={prompt}
+POST /api/v1/models/completions
+{
+    ...
+}
 ```
 
-> - `Envoyer` un prompt à un modèle avec un <u>'session_id'</u>, <u>'model_id'</u> et <u>prompt</u>
+delete
+> - `Détruire` un prompt à un modèle avec un <u>'session_id'</u>, <u>'model_id'</u> et <u>prompt</u>
 ```js
-POST /api/v1/sessions/{session_id}/models/{model_id}?prompt={prompt}
+DELETE /api/v1/models/{model_id}
+{
+    ...
+}
 ```
+</br>
 
 ### Agents
 get
@@ -135,12 +166,18 @@ POST /api/v1/models/agents?name={name}
 
 > - `Envoyer` une requête à l'agent avec son <u>'agent_id'</u> et <u>prompt</u>
 ```js
-POST /api/v1/models/agents/{agent_id}?prompt={prompt}
+POST /api/v1/models/agents/{agent_id}
+{
+    ...
+}
 ```
 
 > - `Envoyer` une requête à l'agent avec son <u>'agent_id'</u>, un <u>'session_id'</u> et <u>prompt</u>
 ```js
-POST /api/v1/sessions/{session_id}/models/agents/{agent_id}?prompt={prompt}
+POST /api/v1/sessions/{session_id}/models/agents/{agent_id}
+{
+    ...
+}
 ```
 
 delete
@@ -148,6 +185,7 @@ delete
 ```js
 DELETE /api/v1/models/agents/{agent_id}
 ```
+</br>
 
 ### Fine-Tuning
 Vide pour le moment...

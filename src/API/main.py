@@ -8,9 +8,9 @@ from typing import Annotated
 
 from datetime import datetime
 
-from src.API.endpoints.Sessions import router as rt_Sessions
-from src.API.endpoints.Models import router as rt_Models
-from src.API.endpoints.Token import router as rt_Auth
+from src.API.routers.Sessions import router as rt_Sessions
+from src.API.routers.Models import router as rt_Models
+from src.API.routers.Auth import router as rt_Auth
 
 # Examples:
 # @router.options()
@@ -22,7 +22,7 @@ from src.API.endpoints.Token import router as rt_Auth
 # @router.trace()
 
 
-def create_app():
+def create_app() -> FastAPI:
     # Client
     app = FastAPI(
         ## Informations

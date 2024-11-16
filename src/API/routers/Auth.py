@@ -8,23 +8,28 @@ from jose import jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from src.API import database
-from src.API import scheme
+from src.API import schema
 
+from dotenv import load_dotenv
 from os import environ as env
+
+load_dotenv()
 
 
 SECRET_KEY= env.get("SECRET_KEY", "abcd")
 ALGORITHM= "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 bcrypt= CryptContext(schemes= ["bcrypt"])
 
 router = APIRouter(prefix= "/token", tags= ["Token"])
 
+
 async def generate_user_token(id: int, username: str, expires_time: float=100):
     payload = {
         "sub": username,
         "id": id,
-        "expires": datetime.now(timezone.utc).timestamp() + (expires_time / 60)
+        "expires": (datetime.now().utcnow() + timedelta(minutes= expires_time)).timestamp()
     }
     return jwt.encode(payload, SECRET_KEY, algorithm= ALGORITHM)
 
