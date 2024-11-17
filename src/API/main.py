@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException, status, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+# from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
@@ -61,7 +61,7 @@ app.add_middleware(
     allow_headers = ["*"]
 )
 
-templates = Jinja2Templates(directory="src/API/templates")
+# templates = Jinja2Templates(directory="src/API/templates")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 
@@ -87,19 +87,19 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 
 ## HOME
-@app.get("/", response_class=HTMLResponse, tags= ["Home"],
-         summary="Show Home Page",
-         description="Home Page.")
-async def home(request: Request, token: Annotated[str, Depends(oauth2_scheme)]):
-    print(token)
-    return templates.TemplateResponse("index.html", {"request": request, "data": "Bienvenue!"})
+# @app.get("/", response_class=HTMLResponse, tags= ["Home"],
+#          summary="Show Home Page",
+#          description="Home Page.")
+# async def home(request: Request, token: Annotated[str, Depends(oauth2_scheme)]):
+#     print(token)
+#     return templates.TemplateResponse("index.html", {"request": request, "data": "Bienvenue!"})
 
 
-@app.get("/about", response_class=HTMLResponse, tags= ["Home"],
-         summary="Show About Page",
-         description="About Page.")
-async def about(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "data": "ABOUT !"})
+# @app.get("/about", response_class=HTMLResponse, tags= ["Home"],
+#          summary="Show About Page",
+#          description="About Page.")
+# async def about(request: Request):
+#     return templates.TemplateResponse("index.html", {"request": request, "data": "ABOUT !"})
 
 
 @app.get("/admin", response_class=HTMLResponse, tags= ["Home"], include_in_schema= False,
