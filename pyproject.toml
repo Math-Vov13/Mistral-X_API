@@ -1,0 +1,24 @@
+[tool.poetry]
+package-mode = false
+name = "app"
+version = "0.1.0"
+description = "API for MistralAI with new features"
+authors = ["Mathéo Vovard"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Math-Vov13/Mistral-X_FastAPI"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.5"
+mistralai = "^1.2.2"
+slowapi = "^0.1.9"
+python-multipart = "^0.0.17"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -52,7 +52,6 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_
                 temperature= parameters.temperature,
                 top_p= parameters.top_p,
                 max_tokens= parameters.max_tokens,
-                min_tokens= parameters.min_tokens,
 
                 stream= True,
                 stop= parameters.stop,
@@ -78,7 +77,6 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_
                 temperature= parameters.temperature,
                 top_p= parameters.top_p,
                 max_tokens= parameters.max_tokens,
-                min_tokens= parameters.min_tokens,
 
                 stream= False,
                 stop= parameters.stop,
@@ -95,27 +93,15 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_
             )
             response_dict = response_formatted.model_dump()
 
-    except HTTPValidationError as http_err:
+    except (HTTPValidationError, SDKError) as http_err:
         print("LOGS :: <" + str(http_err) + ">", f"({http_err.__class__})")
         return {
             "succeed": False,
             "streaming": False,
             "message_id": -1,
             "response": {
-                "type": "HTTPValidation",
-                "msg_error": str(http_err) if str(http_err) != "{}" else "HTTP Error: Your request Body caused an unexpected error ?! Please pay attention to the schema requested."
-            }
-        }
-    
-    except SDKError as sdk_err:
-        print("LOGS :: <" + str(sdk_err) + ">", f"({sdk_err.__class__})")
-        return {
-            "succeed": False,
-            "streaming": False,
-            "message_id": -1,
-            "response": {
-                "type": "SDK",
-                "msg_error": str(sdk_err) if str(sdk_err) != "{}" else "SDK Error: The API cannot support streaming at the moment."
+                "type": http_err.__class__.__name__,
+                "msg_error": str(http_err) if str(http_err) != "{}" else "ERROR: The MistralAI API returned an unexpected error. Verify your request Body and retry later!"
             }
         }
 
