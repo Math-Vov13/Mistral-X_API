@@ -9,7 +9,7 @@ from typing import AsyncGenerator
 import asyncio
 
 from mistralai import ChatCompletionRequest, AgentsCompletionRequest
-from src.API.routers.Models import chat_withModel
+from src.API.endpoints.Models import chat_withModel
 from src.API import database
 from src.API.schema import *
 
