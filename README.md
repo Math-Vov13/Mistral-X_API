@@ -1,7 +1,5 @@
 # Mistral-X API
 
-I designed an API based on Mistral API with some features I added.
-
 <div style="border: 2px solid red; padding: 10px; border-radius: 5px;">
     <strong>⚠️ Before start, please notice :</strong>
 
@@ -17,6 +15,7 @@ I designed an API based on Mistral API with some features I added.
 ![MistralAI-X logo](/references/mistralai-x-fastapi.png)
 
 **I'd like to introduce you "<u>Mistral-X API</u>", an API with new features compared to the [official](https://docs.mistral.ai/api/)**.</br>
+and with my personal touch ♥
 
 ➕ **Features:**
 
