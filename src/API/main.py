@@ -6,8 +6,10 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 
-from datetime import datetime
+from copy import replace
 
+from datetime import datetime
+from src.Core.config import CONFIG
 from src.API.endpoints.Sessions import router as rt_Sessions
 from src.API.endpoints.Models import router as rt_Models
 from src.API.endpoints.Auth import router as rt_Auth
@@ -26,9 +28,9 @@ def create_app() -> FastAPI:
     # Client
     app = FastAPI(
         ## Informations
-        title= "Mon API Test avec Mistral AI",
-        description= "Hello, World! This is a cool API :D",
-        version= "1.0.0",
+        title= CONFIG.NAME,
+        description= CONFIG.DESCRIPTION,
+        version= CONFIG.VERSION,
         contact= {
             "name": "...",
             # "url": "nothing here",

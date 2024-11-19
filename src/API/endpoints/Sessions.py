@@ -4,14 +4,14 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from datetime import datetime
 from json import dumps
-from typing import AsyncGenerator
 
 import asyncio
 
-from mistralai import ChatCompletionRequest, AgentsCompletionRequest
 from src.API.endpoints.Models import chat_withModel
-from src.API import database
-from src.API.schema import *
+from src.DataBase import sessions_db as database
+from src.Schemas.sessions import *
+from src.Schemas.mistral_ai import *
+
 
 router = APIRouter(prefix= "/sessions", tags= ["Sessions"])
 limiter = Limiter(
@@ -104,7 +104,7 @@ async def queue_generator(generator, queue):
              summary= "Chat with Model using a Session",
              description= "<b>Chat with the model of your choice!</b></br> The session saves your History and gives models a memory of your last exchanges.")
 @limiter.limit("5/2second", per_method= True)
-async def chat_withModel_Session(request: Request, session_id: Session_id_Schema, body: ChatCompletionRequest, background_task: BackgroundTasks) -> Response_Schema | list[Streaming_Response_Schema]:
+async def chat_withModel_Session(request: Request, session_id: Session_id_Schema, body: Request_Chat_Model, background_task: BackgroundTasks) -> Response_Schema | list[Streaming_Response_Schema]:
     actual_session = await database.get_session_by_id(session_id)
     if actual_session is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -142,7 +142,7 @@ async def chat_withModel_Session(request: Request, session_id: Session_id_Schema
              summary= "Chat with your Agent using a Session",
              description= "<b>Chat with one of your agents!</b></br> The session saves your History and gives agents a memory of your last exchanges.")
 @limiter.limit("5/2second", per_method= True)
-async def chat_withAgent_Session(request: Request, session_id: Session_id_Schema, body: AgentsCompletionRequest) -> None:
+async def chat_withAgent_Session(request: Request, session_id: Session_id_Schema, body: Request_Chat_Agent) -> None:
     actual_session = await database.get_session_by_id(session_id)
     if actual_session is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -176,7 +176,7 @@ async def delete_Session(request: Request, session_id: Session_id_Schema):
     }
 
 
-@router.delete("/{session_id}/{message_id}",
+@router.delete("/{session_id}/messages/{message_id}",
                summary="Delete a Message",
                description="<b>Delete a Message from a Session permanently!</b></br> After this action, you will no longer be able to retrive this message in your session history.")
 @limiter.limit("1/2second", per_method= True)

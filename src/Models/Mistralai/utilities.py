@@ -1,10 +1,10 @@
-from mistralai import Mistral, SystemMessage, ChatCompletionResponse, ChatCompletionRequest, CompletionEvent
+from mistralai import Mistral, SystemMessage, CompletionEvent
 from mistralai import HTTPValidationError, SDKError
 from typing import AsyncGenerator
 
 from os import environ as env
 from dotenv import load_dotenv
-from src.API.schema import *
+from src.Schemas.mistral_ai import *
 
 load_dotenv()
 
@@ -42,7 +42,7 @@ async def stream_response(async_gen: AsyncGenerator[CompletionEvent, None], mess
         ).model_dump_json()
 
 
-async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_id: Message_id_Schema = -1):
+async def send_prompt(history: dict, parameters: Request_Chat_Model, message_id: Message_id_Schema = -1):
     try:
         if parameters.stream:
             streaming_formatted = await model.chat.stream_async(
@@ -70,7 +70,7 @@ async def send_prompt(history: dict, parameters: ChatCompletionRequest, message_
             response_dict = streaming_formatted
 
         else:
-            response_formatted : ChatCompletionResponse = await model.chat.complete_async(
+            response_formatted = await model.chat.complete_async(
                 model= parameters.model,
                 messages= history,
 

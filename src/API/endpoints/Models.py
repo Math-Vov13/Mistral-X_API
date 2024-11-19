@@ -6,10 +6,10 @@ from datetime import datetime
 from json import loads, JSONDecodeError, dumps
 from typing import Annotated
 
-from mistralai import BaseModelCard, ChatCompletionRequest
+
 from src.Models.Mistralai import utilities as Mixtral_Model_Utilities
-from src.API import database
-from src.API.schema import *
+from src.DataBase import models_db as database
+from src.Schemas.mistral_ai import *
 
 
 router = APIRouter(prefix= "/models", tags= ["Models"])
@@ -51,7 +51,7 @@ async def list_all_models(request: Request, capabilities: str = Query(None)) -> 
                                 headers     = {"code_error": "400", "method": "GET"})
         
         else:
-            async def get_models_by_capabilities() -> None | dict[str, BaseModelCard]:
+            async def get_models_by_capabilities() -> None | dict[str, Response_Model_Description]:
                 new_list = dict()
 
                 for model in models.values():
@@ -80,11 +80,11 @@ async def list_all_models(request: Request, capabilities: str = Query(None)) -> 
     }
 
 
-@router.get("/{model_id}", response_model= BaseModelCard, #deprecated= True,
+@router.get("/{model_id}", response_model= Response_Model_Description, #deprecated= True,
             summary="Retrive a Model",
             description= "Retrive a Model based on its `model_id`")
 @limiter.limit("1/2second", per_method= True)
-async def retrieve_Model(request: Request, model_id: str) -> BaseModelCard:
+async def retrieve_Model(request: Request, model_id: str) -> Response_Model_Description:
     model = await database.get_model_by_id(model_id)
     if model is None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
@@ -100,7 +100,7 @@ async def retrieve_Model(request: Request, model_id: str) -> BaseModelCard:
              summary="Chat with Model without using a Session",
              description= "Chat with the model of your choice !")
 @limiter.limit("5/2second", per_method= True)
-async def chat_withModel(request: Request, body: ChatCompletionRequest, message_id: Annotated[int, Cookie()] = -1) -> Response_Schema | Streaming_Response_Schema:
+async def chat_withModel(request: Request, body: Request_Chat_Model, message_id: Annotated[int, Cookie()] = -1) -> Response_Schema | Streaming_Response_Schema:
     """Chat with a Model"""
     print("message id:", message_id)
 
